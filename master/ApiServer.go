@@ -15,6 +15,8 @@ var (
 	G_apiServer *ApiServer
 )
 
+// 保存任务接口
+// POST job={"name": "job1", "command": "echo hello", "cronExpr": "* * * * *"}
 func handleJobSaver(w http.ResponseWriter, r *http.Request) {
 
 }

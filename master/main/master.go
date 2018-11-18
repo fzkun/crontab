@@ -39,6 +39,10 @@ func main() {
 		goto ERR
 	}
 
+	if err = master.InitJobMgr(); err != nil {
+		goto ERR
+	}
+
 	// 启动api http服务
 	if err = master.InitServer(); err != nil {
 		goto ERR
