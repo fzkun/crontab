@@ -1,6 +1,8 @@
 package master
 
 import (
+	"encoding/json"
+	"github.com/fzkun/crontab/master/common"
 	"net"
 	"net/http"
 	"strconv"
@@ -17,8 +19,37 @@ var (
 
 // 保存任务接口
 // POST job={"name": "job1", "command": "echo hello", "cronExpr": "* * * * *"}
-func handleJobSaver(w http.ResponseWriter, r *http.Request) {
+func handleJobSaver(resp http.ResponseWriter, req *http.Request) {
+	var (
+		err     error
+		postJob string
+		job     common.Job
+		oldJob  *common.Job
+		bytes   []byte
+	)
 
+	if err = req.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	postJob = req.PostForm.Get("job")
+	if err = json.Unmarshal([]byte(postJob), &job); err != nil {
+		goto ERR
+	}
+
+	if oldJob, err = G_jobMgr.SaveJob(&job); err != nil {
+		goto ERR
+	}
+
+	//{"error":0, "msg":"", "data":{...}}
+	if bytes, err = common.BuildResponse(0, "success", oldJob); err == nil {
+		resp.Write(bytes)
+	}
+
+ERR:
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		resp.Write(bytes)
+	}
 }
 
 func InitServer() (err error) {

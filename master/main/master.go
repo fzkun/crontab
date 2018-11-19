@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fzkun/crontab/master"
 	"runtime"
+	"time"
 )
 
 var (
@@ -49,6 +50,9 @@ func main() {
 	}
 
 	//正常退出
+	for {
+		time.Sleep(1 * time.Second)
+	}
 	return
 
 ERR:
