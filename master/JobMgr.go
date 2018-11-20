@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/fzkun/crontab/master/common"
 	"time"
 )
@@ -56,14 +57,14 @@ func InitJobMgr() (err error) {
 func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 	// 把任务保存到/cron/jobs/任务名 -> json
 	var (
-		jobKey  string
-		jobVale []byte
-		putResp *clientv3.PutResponse
-		oldJobObj  common.Job
+		jobKey    string
+		jobVale   []byte
+		putResp   *clientv3.PutResponse
+		oldJobObj common.Job
 	)
 
 	// etcd保存key
-	jobKey = "/cron/jobs/" + job.Name
+	jobKey = common.JOB_SAVE_DIR + job.Name
 	//任务信息json
 	if jobVale, err = json.Marshal(job); err != nil {
 		return
@@ -81,6 +82,58 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 	}
 
 	oldJob = &oldJobObj
+
+	return
+}
+
+func (jobMgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
+	var (
+		jobKey     string
+		deleteResp *clientv3.DeleteResponse
+		oldJobObj  common.Job
+	)
+
+	jobKey = common.JOB_SAVE_DIR + name
+	if deleteResp, err = jobMgr.kv.Delete(context.TODO(), jobKey, clientv3.WithPrevKV()); err != nil {
+		return
+	}
+
+	if len(deleteResp.PrevKvs) != 0 {
+		if err = json.Unmarshal(deleteResp.PrevKvs[0].Value, &oldJobObj); err != nil {
+			err = nil
+			return
+		}
+	}
+
+	oldJob = &oldJobObj
+
+	return
+}
+
+func (jobMgr *JobMgr) ListJob() (jobList []*common.Job, err error) {
+	var (
+		dirKey  string
+		getResp *clientv3.GetResponse
+		kvPair  *mvccpb.KeyValue
+		job     *common.Job
+	)
+
+	dirKey = common.JOB_SAVE_DIR
+
+	//保存到etcd
+	if getResp, err = jobMgr.kv.Get(context.TODO(), dirKey, clientv3.WithPrefix()); err != nil {
+		return
+	}
+
+	jobList = make([]*common.Job, 0)
+
+	for _, kvPair = range getResp.Kvs {
+		job = &common.Job{}
+		if err = json.Unmarshal(kvPair.Value, jobMgr); err != nil {
+			continue
+		}
+		jobList = append(jobList, job)
+	}
 
 	return
 }
