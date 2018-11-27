@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/fzkun/crontab/master/common"
@@ -43,6 +44,8 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		if job, err = common.UnpackJob(kvpair.Value); err == nil {
 			//TODO: job同步给schedule（调度协程）
 			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
+			fmt.Println(*jobEvent)
+			G_scheduler.PushJobEvent(jobEvent)
 		}
 
 	}
@@ -52,10 +55,10 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		//下个版本开始监听
 		watchStartRevision = getResp.Header.Revision + 1
 		//监听/cron/jobs/目录后续变化
-		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision))
+		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision), clientv3.WithPrefix())
 		//处理监听事件
 		for watchResp = range watchChan {
-			for watchEvent = range watchResp.Events {
+			for _, watchEvent = range watchResp.Events {
 				switch watchEvent.Type {
 				case mvccpb.PUT: //任务保存
 					if job, err = common.UnpackJob(watchEvent.Kv.Value); err != nil {
@@ -73,6 +76,8 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 				}
 
 				//TODO:推一个删除事件给schedule
+				fmt.Println(*jobEvent)
+				G_scheduler.PushJobEvent(jobEvent)
 			}
 		}
 	}()
