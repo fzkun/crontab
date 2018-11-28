@@ -18,10 +18,11 @@ var (
 func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 	go func() {
 		var (
-			cmd    *exec.Cmd
-			err    error
-			output []byte
-			result *common.JobExecuteResult
+			cmd     *exec.Cmd
+			err     error
+			output  []byte
+			result  *common.JobExecuteResult
+			jobLock *JobLock
 		)
 
 		//任务结果
@@ -29,6 +30,9 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 			ExecuteInfo: info,
 			Output:      make([]byte, 0),
 		}
+
+		//初始化锁
+		jobLock = G_jobMgr.CreateJobLock(info.Job.Name)
 
 		//任务开始时间
 		result.StartTime = time.Now()
