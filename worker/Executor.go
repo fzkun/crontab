@@ -3,6 +3,7 @@ package worker
 import (
 	"github.com/fzkun/crontab/common"
 	"log"
+	"math/rand"
 	"os/exec"
 	"time"
 )
@@ -36,6 +37,10 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 		//任务开始时间
 		result.StartTime = time.Now()
 
+		//随机睡眠(0~1s)
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+
+		//上锁
 		err = jobLock.TryLock()
 		defer jobLock.UnLock()
 
