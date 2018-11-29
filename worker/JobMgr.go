@@ -6,6 +6,7 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/fzkun/crontab/common"
+	"log"
 	"time"
 )
 
@@ -85,6 +86,46 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 	return
 }
 
+// 监听任务变化
+func (jobMgr *JobMgr) watchKiller() (err error) {
+
+	var (
+		job                *common.Job
+		watchChan          clientv3.WatchChan
+		watchResp          clientv3.WatchResponse
+		watchEvent         *clientv3.Event
+		jobName            string
+		jobEvent           *common.JobEvent
+	)
+
+	//2.从该revision开始监听
+	go func() { //监听协程
+		//监听/cron/killer/目录后续变化
+		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_KILLER_DIR, clientv3.WithPrefix())
+		//处理监听事件
+		for watchResp = range watchChan {
+			for _, watchEvent = range watchResp.Events {
+				switch watchEvent.Type {
+				case mvccpb.PUT: //任务kill
+					jobName = common.ExtractKillerName(string(watchEvent.Kv.Key))
+					log.Println("watch key:", string(watchEvent.Kv.Key))
+					job = &common.Job{Name: jobName}
+					jobEvent = common.BuildJobEvent(common.JOB_EVENT_KILL, job)
+					//TODO:推一个kill事件给schedule
+					G_scheduler.PushJobEvent(jobEvent)
+				case mvccpb.DELETE: //标记killer过期，被自动删除(不关注)
+					//jobName = common.ExtractKillerName(string(watchEvent.Kv.Key))
+					//job = &common.Job{Name: jobName}
+					//jobEvent = common.BuildJobEvent(common.JOB_EVENT_KILL, job)
+				}
+
+			}
+		}
+	}()
+
+	return
+}
+
 // 初始化管理器
 func InitJobMgr() (err error) {
 	var (
@@ -123,6 +164,12 @@ func InitJobMgr() (err error) {
 	if err = G_jobMgr.watchJobs(); err != nil {
 		return
 	}
+
+	//启动kill监听
+	if err = G_jobMgr.watchKiller(); err != nil {
+		return
+	}
+
 	return
 }
 

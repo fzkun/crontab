@@ -114,7 +114,7 @@ func handleJobKill(resp http.ResponseWriter, req *http.Request) {
 	if err = req.ParseForm(); err != nil {
 		goto ERR
 	}
-	name = req.Form.Get(name)
+	name = req.Form.Get("name")
 	if err = G_jobMgr.KillJob(name); err != nil {
 		goto ERR
 	}
