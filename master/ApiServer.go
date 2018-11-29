@@ -2,7 +2,7 @@ package master
 
 import (
 	"encoding/json"
-	"github.com/fzkun/crontab/master/common"
+	"github.com/fzkun/crontab/common"
 	"net"
 	"net/http"
 	"strconv"

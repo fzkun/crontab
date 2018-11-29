@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/fzkun/crontab/master/common"
+	"github.com/fzkun/crontab/common"
 	"log"
 	"time"
 )
@@ -103,7 +103,6 @@ func (scheduler *Scheduler) TrySchedule() (scheduleAfter time.Duration) {
 func (scheduler *Scheduler) handleJobResult(result *common.JobExecuteResult) {
 	//从执行表删除
 	delete(scheduler.jobExcutingTable, result.ExecuteInfo.Job.Name)
-	log.Println("执行成功", result.ExecuteInfo.Job.Name)
 }
 
 //协程调度

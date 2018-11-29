@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/fzkun/crontab/master/common"
+	"github.com/fzkun/crontab/common"
 	"time"
 )
 
