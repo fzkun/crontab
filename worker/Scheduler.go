@@ -126,6 +126,14 @@ func (scheduler *Scheduler) handleJobResult(result *common.JobExecuteResult) {
 			StartTime:    result.StartTime.UnixNano() / 1000 / 1000,
 			EndTime:      result.EndTime.UnixNano() / 1000 / 1000,
 		}
+		if result.Err != nil {
+			jobLog.Err = result.Err.Error()
+		} else {
+			jobLog.Err = ""
+		}
+
+		//TODO: 存储到mongodb
+		G_logSink.Append(jobLog)
 	}
 }
 
