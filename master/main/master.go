@@ -40,6 +40,14 @@ func main() {
 		goto ERR
 	}
 
+	if err = master.InitWorkerMgr(); err != nil {
+		goto ERR
+	}
+
+	if err = master.InitLogMgr(); err != nil {
+		goto ERR
+	}
+
 	if err = master.InitJobMgr(); err != nil {
 		goto ERR
 	}
